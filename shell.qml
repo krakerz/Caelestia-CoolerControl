@@ -13,4 +13,10 @@ ShellRoot {
 
         CoolerWidget {}
     }
+
+    Variants {
+        model: Config.loaded && (Config.data.overview?.enabled ?? true) ? Quickshell.screens : []
+
+        Overview {}
+    }
 }

@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Keybind hooks: qs -c caelestia-coolercontrol ipc call <calendar|coolercontrol> <toggle|open|close>
+// Keybind hooks: qs -c caelestia-coolercontrol ipc call <calendar|coolercontrol|overview> <toggle|open|close>
 Singleton {
     id: root
 
@@ -45,6 +45,22 @@ Singleton {
 
         function close(): void {
             root.set("coolercontrol", false);
+        }
+    }
+
+    IpcHandler {
+        target: "overview"
+
+        function toggle(): void {
+            root.set("overview", !root.opened.overview);
+        }
+
+        function open(): void {
+            root.set("overview", true);
+        }
+
+        function close(): void {
+            root.set("overview", false);
         }
     }
 }

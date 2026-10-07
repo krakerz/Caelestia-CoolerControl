@@ -4,17 +4,20 @@ Quickshell/QML widgets for Hyprland + Caelestia shell.
 
 ## Description
 
-Caelestia-CoolerControl provides a suite of desktop widgets for the Hyprland window manager and Caelestia shell, built with Quickshell and QML. Widgets are Caelestia-style drawers that slide out from the screen frame and integrate with Caelestia's live colour scheme. Features include a calendar with multiple event sources, live system monitoring via CoolerControl, and per-widget visibility control.
+Caelestia-CoolerControl provides a suite of desktop widgets for the Hyprland window manager and Caelestia shell, built with Quickshell and QML. Widgets are Caelestia-style drawers that slide out from the screen frame and integrate with Caelestia's live colour scheme. Features include a calendar with multiple event sources, live system monitoring via CoolerControl, and a KDE-style window overview of the current workspace.
 
 ## Features
 
-- Drawers that slide out from screen edges (top, bottom, left, right) or corners with positioning presets
+- Drawers that slide out from screen edges (top, bottom, left, right) or corners with positioning presets and x/y nudges
 - Three drawer modes: hover (appears on frame edge hover), always (stays open), or pinned (user-controllable)
+- Keybind-friendly IPC commands to toggle, open or close each panel
+- Hover is ignored over fullscreen apps; a keybind opens a floating card instead
 - Calendar widget with month grid and upcoming events list
-- Multiple ICS calendar feeds (Google Calendar, Nextcloud, etc.)
+- Multiple ICS calendar feeds (Google Calendar, Outlook / Microsoft 365, Nextcloud, etc.)
 - Public holidays for multiple countries via Google Calendar or Nager API
 - Thunderbird calendar integration with per-calendar colour customization
-- CoolerControl system monitor: temperature, fan speed, power, frequency readings with per-reading visibility toggle
+- CoolerControl system monitor: temperature, fan speed, power, frequency readings; show/hide, rename and reorder devices and readings in edit mode
+- Window overview (KDE "Present Windows" style): live thumbnails of the current workspace, click or Enter to focus, type to filter
 - Live Caelestia colour scheme integration with per-colour config overrides
 - JSON configuration file with hot reload (no restart needed)
 - Per-widget monitor targeting, layer control, and styling
@@ -71,7 +74,26 @@ Example keybinds for `~/.config/caelestia/hypr-user.lua` (this is an example, no
 ```lua
 hl.bind("SUPER + G", hl.dsp.exec_cmd("qs -c caelestia-coolercontrol ipc call calendar toggle"))
 hl.bind("SUPER + H", hl.dsp.exec_cmd("qs -c caelestia-coolercontrol ipc call coolercontrol toggle"))
+hl.bind("SUPER + W", hl.dsp.exec_cmd("qs -c caelestia-coolercontrol ipc call overview toggle"))
 ```
+
+### Window overview
+
+`qs -c caelestia-coolercontrol ipc call overview toggle` shows every window on the focused monitor's current workspace (or its open special workspace) as a live thumbnail, KDE "Present Windows" style.
+
+- Click or Enter focuses a window and closes the overview; middle-click closes a window.
+- Arrow keys / Tab move the selection, typing filters by title or app, Backspace edits the filter.
+- Esc clears the filter, then closes; clicking the backdrop closes too.
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| overview.enabled | `true` | Enable the overview |
+| overview.live | `true` | Live thumbnails (false = a still frame per window) |
+| overview.dim | `0.7` | Backdrop opacity |
+| overview.margin | `80` | Screen margin around the thumbnails |
+| overview.gap | `28` | Gap between thumbnails |
+| overview.maxThumbHeight | `0.55` | Max thumbnail height as a fraction of the screen |
+| overview.showHint | `true` | Show the key hint line at the top |
 
 ### Configuration
 
