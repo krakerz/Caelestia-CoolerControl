@@ -8,29 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- Panel placement presets (top, bottom, left, right and corners) with x/y nudges
-- Panels ignore hover over fullscreen apps; a keybind opens them as a floating card
-- Caelestia-style drawers that slide out from screen corners with filleted frame integration
-- Drawer hover activation, always-on mode, and pin toggle (saved to config)
-- Calendar widget with month grid, day selection, and upcoming events list
-- CoolerControl system monitor with per-device cards (temperature, fan, power, frequency)
-- Scrollable CoolerControl lists with configurable maxHeight
-- Multiple ICS calendar feeds (Google Calendar, Nextcloud, etc.)
-- Public holidays from Google Calendar or Nager API
-- Thunderbird calendar integration with per-calendar colours
-- Live Caelestia colour scheme integration (watches XDG_STATE_HOME/caelestia/scheme.json)
-- Per-colour theme overrides in config
-- Per-reading visibility toggle in CoolerControl edit mode
-- Keybind-friendly IPC commands to toggle, open or close each panel
-- Rename the CoolerControl title, devices and readings from edit mode
-- JSON config hot-reload (no restart needed)
-- Smooth drawer open/close animations
-- Multi-monitor and per-widget monitor targeting
-- Lucide icons (ISC licensed)
+- Side-edge presets anchored to one end: left-top, left-bottom, right-top, right-bottom
+- Calendar on a side edge only reacts to hover alongside its month grid (`triggerArea`)
 
-### Fixed
+## [0.1.0] — 2026-10-07
 
-- Calendar panel no longer flickers while hovering its buttons
-- CoolerControl bars animate from the previous value instead of restarting from zero
-- Removed the faint line where a panel meets the Caelestia frame
-- Panels stay above Caelestia and keep working after Caelestia restarts
+### Added
+
+- Calendar panel with month grid, day selection and upcoming events list
+- Multiple ICS calendar feeds (Google, Outlook/Microsoft 365, Nextcloud, …), as objects or plain URLs
+- Outlook/Exchange event times converted from Windows time zones
+- Public holidays for multiple countries from Google Calendar or Nager.Date
+- Thunderbird calendars with their own colours
+- CoolerControl panel with per-device cards for temperatures, fans, power, load and clocks
+- Show/hide each reading or device and rename the title, devices and readings from edit mode
+- Scrollable CoolerControl list with configurable max height
+- Caelestia-style drawers that grow out of the screen frame and blend into it
+- Placement presets (top, bottom, left, right and corners) with x/y nudges
+- Hover, always-on and pinned modes, plus IPC commands for keybinds
+- Panels stay above Caelestia, also after it restarts
+- Hover ignored over fullscreen apps; a keybind opens a floating card instead
+- Live Caelestia colour scheme with per-colour overrides
+- JSON config with hot reload
+- Multi-monitor targeting per panel

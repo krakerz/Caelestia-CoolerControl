@@ -35,6 +35,21 @@ GOOGLE_HOLIDAYS = {
     "US": "usa", "VN": "vietnamese",
 }
 
+# Outlook/Exchange feeds use Windows zone names, which zoneinfo doesn't know.
+WINDOWS_TZ = {
+    "UTC": "UTC", "GMT Standard Time": "Europe/London", "W. Europe Standard Time": "Europe/Berlin",
+    "Central Europe Standard Time": "Europe/Budapest", "Romance Standard Time": "Europe/Paris",
+    "E. Europe Standard Time": "Europe/Chisinau", "Russian Standard Time": "Europe/Moscow",
+    "Arabian Standard Time": "Asia/Dubai", "India Standard Time": "Asia/Kolkata",
+    "SE Asia Standard Time": "Asia/Bangkok", "Singapore Standard Time": "Asia/Singapore",
+    "China Standard Time": "Asia/Shanghai", "Taipei Standard Time": "Asia/Taipei",
+    "Tokyo Standard Time": "Asia/Tokyo", "Korea Standard Time": "Asia/Seoul",
+    "W. Australia Standard Time": "Australia/Perth", "AUS Eastern Standard Time": "Australia/Sydney",
+    "New Zealand Standard Time": "Pacific/Auckland", "Eastern Standard Time": "America/New_York",
+    "Central Standard Time": "America/Chicago", "Mountain Standard Time": "America/Denver",
+    "Pacific Standard Time": "America/Los_Angeles", "E. South America Standard Time": "America/Sao_Paulo",
+}
+
 errors = []
 
 
@@ -121,10 +136,11 @@ def parse_time(value, params):
         return stamp.replace(tzinfo=dt.timezone.utc).astimezone(LOCAL)
     tz = LOCAL
     if "TZID" in params:
+        tzid = params["TZID"]
         try:
-            tz = ZoneInfo(params["TZID"])
+            tz = ZoneInfo(WINDOWS_TZ.get(tzid, tzid))
         except Exception:
-            pass  # e.g. Windows zone names; assume local
+            pass  # unknown zone name; assume local
     return stamp.replace(tzinfo=tz).astimezone(LOCAL)
 
 
@@ -312,6 +328,8 @@ def ics_occurrences(text, win_start, win_end, skip=None):
 def ics_feeds(cfg, win_start, win_end, out):
     default_refresh = cfg.get("refreshMinutes", 30)
     for feed in cfg.get("ics", []):
+        if isinstance(feed, str):  # a bare URL is fine too
+            feed = {"url": feed}
         if not feed.get("enabled", True) or not feed.get("url"):
             continue
         name = feed.get("name", "Calendar")

@@ -15,13 +15,16 @@ PanelWindow {
     required property string ns // also the config section name
     default property alias content: body.data
     property bool holdOpen: false // e.g. while editing
+    property real triggerSpan: along // length of the closed hover strip, from the panel's start
     property bool keyboard: false
 
-    // position: top | bottom | left | right (centred on that edge) or a corner (top-left, ...).
+    // position: "<edge>" (centred on that edge) or "<edge>-<end>": top-left/top-right/bottom-left/bottom-right,
+    // left-top/left-bottom/right-top/right-bottom. With an end, the panel is anchored there and x/y nudge from it.
     readonly property string position: cfg.position ?? "top-left"
-    readonly property string edge: position.startsWith("bottom") ? "bottom" : position.startsWith("top") ? "top" : position
+    readonly property string edge: position.split("-")[0]
+    readonly property string end: position.split("-")[1] ?? ""
     readonly property bool vertical: edge === "left" || edge === "right" // panel grows sideways
-    readonly property string align: position.endsWith("left") && !vertical ? "start" : position.endsWith("right") && !vertical ? "end" : "center"
+    readonly property string align: end === "left" || end === "top" ? "start" : end === "right" || end === "bottom" ? "end" : "center"
 
     // Caelestia frame: bar on the left, thin border elsewhere.
     readonly property var frame: Config.theme.frame ?? ({})
@@ -173,7 +176,10 @@ PanelWindow {
 
         readonly property real trigger: root.cfg.triggerSize ?? root.thick
         // v is measured from the inner frame edge, so the screen edge sits at -edgeInset.
-        readonly property rect area: root.rect(root.flushStart ? 0 : root.start, root.flushEnd ? (root.vertical ? root.sh : root.sw) : root.start + root.along, -root.edgeInset, root.depth > 0.5 ? root.depth : trigger - root.edgeInset)
+        readonly property bool out: root.depth > 0.5
+        // Closed, only triggerSpan is hot, so the rest of the edge stays free for Caelestia's own hover areas.
+        readonly property real span: out ? root.along : Math.min(root.along, root.triggerSpan)
+        readonly property rect area: root.rect(root.flushStart ? 0 : root.start, root.flushEnd && span >= root.along ? (root.vertical ? root.sh : root.sw) : root.start + span, -root.edgeInset, out ? root.depth : trigger - root.edgeInset)
 
         x: area.x
         y: area.y

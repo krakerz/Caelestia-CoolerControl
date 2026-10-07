@@ -94,6 +94,8 @@ Drawer {
 
     cfg: Config.calendar
     ns: "calendar"
+    // "grid": hover strip only alongside the month card (the long upcoming list would block the edge).
+    triggerSpan: vertical && (cfg.triggerArea ?? "grid") === "grid" ? Theme.padding + gridCard.height : along
 
     SystemClock {
         id: clock
@@ -102,6 +104,8 @@ Drawer {
     }
 
     Card {
+        id: gridCard
+
         RowLayout {
             width: parent.width
             spacing: 2

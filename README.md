@@ -86,6 +86,19 @@ Panels are positioned on the screen frame edge, with presets for edges and corne
   - `"left"`, `"right"`: use `y` to shift up/down, `x` is ignored
 - **Corner positions** (attached to the top or bottom edge, flush against the side):
   - `"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"`: use `x` to shift away from corner along the edge, `y` is ignored
+- **Side positions anchored to one end** (attached to the left/right edge):
+  - `"left-top"`, `"right-top"`: `y` is the distance from the top, the panel grows downward
+  - `"left-bottom"`, `"right-bottom"`: negative `y` lifts it from the bottom, the panel grows upward
+
+Nudges are in screen directions (positive = right / down). With a centred preset (`"left"`, `"right"`, `"top"`, `"bottom"`) the nudge is relative to the centre, so the panel's ends move when its content grows; use an anchored preset to keep one end fixed.
+
+Example: calendar on the right edge, its top 70 px below the frame:
+```json
+{
+  "position": "right-top",
+  "y": 70
+}
+```
 
 Example: calendar centred on the top edge, nudged 200 pixels right:
 ```json
@@ -120,6 +133,7 @@ Example: calendar centred on the top edge, nudged 200 pixels right:
 | | pinned | `false` | Persist the drawer open (user-toggleable via pin button) |
 | | closeDelay | `300` | Milliseconds to wait before auto-closing after mouse leaves |
 | | triggerSize | `10` | Hover strip depth from screen edge in pixels (default = frame thickness) |
+| | triggerArea | `"grid"` | Calendar on a left/right edge: hover strip only alongside the month grid (`"grid"`) or the whole panel (`"panel"`), keeping the rest of the edge free for Caelestia |
 | | layer | `"overlay"` | Wayland layer: `"overlay"` (above Caelestia, survives its restarts) or `"top"` |
 | | hideOnFullscreen | `true` | Ignore hover and pinning while a fullscreen app is open; a keybind still opens the panel as a floating card |
 | | fullscreenMargin | `10` | Gap between the floating card and the screen edge over fullscreen apps |
@@ -188,6 +202,15 @@ Example: calendar centred on the top edge, nudged 200 pixels right:
 2. Find the calendar in the left sidebar, click the three dots, and select "Settings and sharing".
 3. Scroll to "Integrate calendar" and copy the "Secret address in iCalendar format" (the https:// link ending in .ics).
 4. Paste it into `calendar.ics[].url` in config.json.
+
+Outlook / Microsoft 365 works the same way: Settings → Calendar → Shared calendars → Publish a calendar, then copy the ICS link (`webcal://` links are fine). Each feed is an object; a bare URL string also works:
+
+```json
+"ics": [
+  { "name": "Outlook", "url": "webcal://outlook.office365.com/owa/calendar/.../reachcalendar.ics", "color": "" },
+  "https://calendar.google.com/calendar/ical/.../basic.ics"
+]
+```
 
 ### How do I create a CoolerControl access token?
 
