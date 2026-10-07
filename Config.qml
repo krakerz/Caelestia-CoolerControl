@@ -50,6 +50,19 @@ Singleton {
         write(d);
     }
 
+    // device null: order of device cards; otherwise order of that device's reading keys.
+    function setOrder(device, list) {
+        const d = JSON.parse(JSON.stringify(data));
+        const cc = d.coolercontrol = d.coolercontrol ?? {};
+        if (device === null) {
+            cc.deviceOrder = list;
+        } else {
+            cc.readingOrder = cc.readingOrder ?? {};
+            cc.readingOrder[device] = list;
+        }
+        write(d);
+    }
+
     // Empty text restores the default label.
     function setLabel(key, text) {
         const d = JSON.parse(JSON.stringify(data));

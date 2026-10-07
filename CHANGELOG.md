@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Side-edge presets anchored to one end: left-top, left-bottom, right-top, right-bottom
 - Calendar on a side edge only reacts to hover alongside its month grid (`triggerArea`)
+- Reorder CoolerControl devices and readings with arrows in edit mode
 
 ## [0.1.0] — 2026-10-07
 

@@ -189,6 +189,8 @@ Example: calendar centred on the top edge, nudged 200 pixels right:
 | | thresholds | `{}` | Per-reading overrides as `{"Device/Label": {warn: 70, crit: 85}}` |
 | | barMax | `{}` | Per-reading bar ceiling as `{"Device/Label": 100}` |
 | | labels | `{}` | Per-reading display name overrides as `{"Device/Label": "Custom Name"}` |
+| | deviceOrder | `[]` | Device card order (device names); set by the arrows in edit mode. Unlisted devices follow in their natural order |
+| | readingOrder | `{}` | Reading order per device: `{"<Device>": ["<Device>/<Label>", ...]}`; set by the arrows in edit mode |
 | | newReadingsVisible | `true` | New readings visible by default; set to `false` for whitelist mode |
 | | hidden | `[]` | Hidden readings in default mode as `["Device/Label", ...]` |
 | | shown | `[]` | Shown readings in whitelist mode as `["Device/Label", ...]` |
@@ -221,7 +223,7 @@ Outlook / Microsoft 365 works the same way: Settings → Calendar → Shared cal
 
 ### How do I hide or show CoolerControl readings?
 
-Click the gear icon in the widget header to enter edit mode. Tick boxes show or hide a whole device or individual readings. The panel title, device names, and reading names become editable text fields — type to rename, press Enter or click away to save, or press Esc to cancel. Empty names restore their defaults. Changes are written to `coolercontrol.hidden`, `coolercontrol.shown`, `coolercontrol.title`, and `coolercontrol.labels` in config.json. The panel stays open while editing.
+Click the gear icon in the widget header to enter edit mode. Tick boxes show or hide a whole device or individual readings, and the up/down arrows move a device card or a reading within its card. The panel title, device names, and reading names become editable text fields — type to rename, press Enter or click away to save, or press Esc to cancel. Empty names restore their defaults. Changes are written to `coolercontrol.hidden`, `coolercontrol.shown`, `coolercontrol.title`, `coolercontrol.labels`, `coolercontrol.deviceOrder` and `coolercontrol.readingOrder` in config.json. The panel stays open while editing.
 
 ### What is the reading key format?
 

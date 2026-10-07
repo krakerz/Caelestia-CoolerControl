@@ -23,7 +23,25 @@ Drawer {
             }
             out[idx[r.device]].items.push(r);
         }
-        return out;
+        const readingOrder = cfg.readingOrder ?? {};
+        for (const g of out)
+            g.items = ordered(g.items, r => r.key, readingOrder[g.device]);
+        return ordered(out, g => g.device, cfg.deviceOrder);
+    }
+
+    // Listed keys first in their saved order; anything unlisted (e.g. a new sensor) keeps its natural order after.
+    function ordered(items, keyOf, order) {
+        const rank = k => {
+            const i = (order ?? []).indexOf(k);
+            return i < 0 ? Infinity : i;
+        };
+        return items.map((x, n) => [x, n]).sort((a, b) => (rank(keyOf(a[0])) - rank(keyOf(b[0]))) || a[1] - b[1]).map(p => p[0]);
+    }
+
+    function swapped(list, i, dir) {
+        const l = list.slice();
+        [l[i], l[i + dir]] = [l[i + dir], l[i]];
+        return l;
     }
 
     function shown(key) {
@@ -119,7 +137,7 @@ Drawer {
     StyledText {
         width: parent.width
         visible: text !== ""
-        text: win.editing ? "Tick to show / hide, edit names in place (empty = default)" : Config.error || CoolerControl.error || (CoolerControl.entries.length ? "" : "Waiting for CoolerControl…")
+        text: win.editing ? "Tick to show / hide, arrows to reorder, edit names in place (empty = default)" : Config.error || CoolerControl.error || (CoolerControl.entries.length ? "" : "Waiting for CoolerControl…")
         color: !win.editing && (Config.error || CoolerControl.error) ? Theme.m3error : Theme.m3onSurfaceVariant
         font.pixelSize: Theme.fontSmall
         wrapMode: Text.Wrap
@@ -146,6 +164,7 @@ Drawer {
                     id: group
 
                     required property var modelData
+                    required property int index
                     readonly property string deviceKey: "@" + modelData.device
 
                     spacing: 6
@@ -170,6 +189,13 @@ Drawer {
                             weight: 600
                             onEdited: t => Config.setLabel(group.deviceKey, t)
                         }
+
+                        MoveButtons {
+                            visible: win.editing
+                            canUp: group.index > 0
+                            canDown: group.index < win.groups.length - 1
+                            onMoved: dir => Config.setOrder(null, win.swapped(win.groups.map(g => g.device), group.index, dir))
+                        }
                     }
 
                     GridLayout {
@@ -185,6 +211,7 @@ Drawer {
                                 id: row
 
                                 required property var modelData
+                                required property int index
                                 readonly property var v: CoolerControl.values[modelData.key]
                                 readonly property bool on: win.shown(modelData.key)
                                 readonly property real bar: win.barValue(modelData, v)
@@ -217,6 +244,13 @@ Drawer {
                                         color: row.modelData.kind === "temp" ? win.levelColour(row.modelData, row.v) : Theme.m3onSurface
                                         font.family: Theme.monoFont
                                         font.weight: 600
+                                    }
+
+                                    MoveButtons {
+                                        visible: win.editing
+                                        canUp: row.index > 0
+                                        canDown: row.index < group.modelData.items.length - 1
+                                        onMoved: dir => Config.setOrder(group.modelData.device, win.swapped(group.modelData.items.map(r => r.key), row.index, dir))
                                     }
                                 }
 

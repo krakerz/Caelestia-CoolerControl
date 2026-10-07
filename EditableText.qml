@@ -12,7 +12,10 @@ Item {
 
     signal edited(string text)
 
-    onTextChanged: if (!input.activeFocus) input.text = text
+    onTextChanged: if (!input.activeFocus) {
+        input.text = text;
+        input.cursorPosition = 0; // show the start of long names, not the end
+    }
 
     implicitWidth: label.implicitWidth
     implicitHeight: label.implicitHeight + (editing ? 4 : 0)
@@ -42,7 +45,10 @@ Item {
         font.weight: root.weight
         clip: true
         selectByMouse: true
-        Component.onCompleted: text = root.text
+        Component.onCompleted: {
+            text = root.text;
+            cursorPosition = 0;
+        }
         onEditingFinished: if (text !== root.text) root.edited(text)
         Keys.onEscapePressed: {
             text = root.text;
