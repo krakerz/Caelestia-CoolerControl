@@ -1,0 +1,105 @@
+{
+  "theme": {
+    "source": "caelestia",
+    "colours": {},
+    "font": "Rubik",
+    "monoFont": "JetBrains Mono NF",
+    "fontSize": 13,
+    "padding": 16,
+    "frame": {
+      "barWidth": 60,
+      "thickness": 10
+    },
+    "panelRounding": 25,
+    "cardRounding": 17,
+    "cardPadding": 14,
+    "spacing": 12,
+    "animDuration": 400
+  },
+  "calendar": {
+    "enabled": true,
+    "monitor": "DP-1",
+    "position": "top-left",
+    "x": 0,
+    "y": 0,
+    "mode": "hover",
+    "pinned": false,
+    "closeDelay": 300,
+    "triggerSize": 10,
+    "layer": "overlay",
+    "width": 360,
+    "locale": "",
+    "firstDayOfWeek": 1,
+    "weekendDays": [
+      0,
+      6
+    ],
+    "timeFormat": "24h",
+    "showEventList": true,
+    "showEventDetails": true,
+    "showErrors": true,
+    "upcomingDays": 14,
+    "maxUpcoming": 8,
+    "refreshMinutes": 30,
+    "monthsBack": 2,
+    "monthsAhead": 12,
+    "ics": [
+      {
+        "name": "Google",
+        "url": "",
+        "color": "",
+        "enabled": true
+      }
+    ],
+    "holidays": {
+      "provider": "google",
+      "countries": [
+        "ID"
+      ],
+      "language": "en",
+      "includeObservances": false,
+      "color": "",
+      "refreshHours": 168
+    },
+    "thunderbird": {
+      "enabled": true,
+      "profile": "auto",
+      "calendars": "all",
+      "colors": {}
+    },
+    "hideOnFullscreen": true
+  },
+  "coolercontrol": {
+    "enabled": true,
+    "monitor": "DP-1",
+    "position": "top-right",
+    "x": 0,
+    "y": 0,
+    "mode": "hover",
+    "pinned": false,
+    "closeDelay": 300,
+    "triggerSize": 10,
+    "layer": "overlay",
+    "width": 340,
+    "title": "CoolerControl",
+    "url": "http://127.0.0.1:11987",
+    "token": "",
+    "pollSeconds": 2,
+    "columns": 1,
+    "showDeviceNames": true,
+    "showBars": true,
+    "showEditButton": true,
+    "tempUnit": "C",
+    "tempDecimals": 1,
+    "warnTemp": 75,
+    "critTemp": 90,
+    "thresholds": {},
+    "barMax": {},
+    "labels": {},
+    "newReadingsVisible": true,
+    "hidden": [],
+    "shown": [],
+    "maxHeight": 900,
+    "hideOnFullscreen": true
+  }
+}
