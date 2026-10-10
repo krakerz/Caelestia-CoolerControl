@@ -4,8 +4,9 @@ import Quickshell.Hyprland
 import Quickshell.Wayland
 import Quickshell.Widgets
 
-// KDE "Present Windows"-style overview of the focused monitor's current workspace (or its open special workspace).
-// Live thumbnails; click / Enter focuses, middle-click closes, typing filters, Esc or the backdrop closes.
+// KDE "Present Windows"-style overview. Opens on the focused monitor's current workspace (or its open special
+// workspace); a tab bar previews the other workspaces. Click / Enter focuses (switching workspace if needed),
+// middle-click closes a window, typing filters, Esc or the backdrop closes.
 PanelWindow {
     id: root
 
@@ -21,11 +22,23 @@ PanelWindow {
     property int selected: 0
     property real appear: 0
 
-    readonly property int wsId: {
+    // Workspaces are keyed by name: Quickshell can report the same id for different special workspaces.
+    readonly property string wsName: {
         const special = monitor?.lastIpcObject?.specialWorkspace;
-        return special && special.id ? special.id : (monitor?.activeWorkspace?.id ?? 0);
+        return special && special.name ? special.name : (monitor?.activeWorkspace?.name ?? "");
     }
-    readonly property var windows: Hyprland.toplevels.values.filter(t => t.workspace?.id === wsId && t.lastIpcObject?.mapped !== false && !t.lastIpcObject?.hidden).sort((a, b) => {
+    // Workspace being previewed: follows the current one (live, since monitor IPC data may still be refreshing
+    // when the overview opens) until a tab is picked; the pick is cleared on every open.
+    property var tabPick: null
+    readonly property string tabWs: tabPick ?? wsName
+    readonly property bool tabsVisible: (cfg.showTabs ?? true) && tabs.length > 1
+    readonly property var tabs: {
+        const all = cfg.allMonitors ?? false, special = cfg.showSpecial ?? false, empty = cfg.showEmpty ?? false;
+        const used = new Set(Hyprland.toplevels.values.map(t => t.workspace?.name));
+        const isSpecial = w => w.name.startsWith("special:");
+        return Hyprland.workspaces.values.filter(w => (all || w.monitor?.name === modelData.name) && (w.name === wsName || ((!isSpecial(w) || special) && (empty || used.has(w.name))))).sort((a, b) => isSpecial(a) - isSpecial(b) || (isSpecial(a) ? a.name.localeCompare(b.name) : a.id - b.id));
+    }
+    readonly property var windows: Hyprland.toplevels.values.filter(t => t.workspace?.name === tabWs && t.lastIpcObject?.mapped !== false).sort((a, b) => {
         const pa = a.lastIpcObject?.at ?? [0, 0], pb = b.lastIpcObject?.at ?? [0, 0];
         return pa[1] - pb[1] || pa[0] - pb[0];
     })
@@ -37,7 +50,7 @@ PanelWindow {
     readonly property int margin: cfg.margin ?? 80
     readonly property int gap: cfg.gap ?? 28
     readonly property int labelH: 34
-    readonly property int headerH: 40
+    readonly property int headerH: tabsVisible ? 100 : 40
 
     // Row packing: try every row count, keep the one giving the largest thumbnails, preserve aspect ratios.
     readonly property var layout: {
@@ -95,10 +108,43 @@ PanelWindow {
     // window never gets focus (so the scrolling layout doesn't scroll to it either).
     property string pendingFocus: ""
 
+    property var pendingWs: null
+
     function focusWindow(t) {
         pendingFocus = t.address;
+        pendingWs = t.workspace;
         close();
         focusDelay.restart();
+    }
+
+    function gotoWorkspace(w) {
+        pendingFocus = "";
+        pendingWs = w;
+        close();
+        focusDelay.restart();
+    }
+
+    // Brings a workspace on screen: special ones are toggled (only if not already shown), and an open special
+    // workspace is hidden before switching to a normal one.
+    function showWorkspace(w) {
+        if (!w || w.name === wsName)
+            return;
+        if (w.name.startsWith("special:")) {
+            Hyprland.dispatch(`hl.dsp.workspace.toggle_special("${w.name.replace(/^special:/, "")}")`);
+            return;
+        }
+        if (wsName.startsWith("special:"))
+            Hyprland.dispatch(`hl.dsp.workspace.toggle_special("${(monitor?.lastIpcObject?.specialWorkspace?.name ?? "").replace(/^special:/, "")}")`);
+        Hyprland.dispatch(`hl.dsp.focus({ workspace = "${w.id}" })`);
+    }
+
+    function switchTab(dir) {
+        const n = tabs.length;
+        if (n < 2)
+            return;
+        const i = Math.max(0, tabs.findIndex(w => w.name === tabWs));
+        tabPick = tabs[(i + dir + n) % n].name;
+        selected = 0;
     }
 
     function closeWindow(t) {
@@ -137,6 +183,7 @@ PanelWindow {
             Hyprland.refreshMonitors();
             Hyprland.refreshToplevels();
             filter = "";
+            tabPick = null;
             appear = 0;
             appearAnim.restart();
             Qt.callLater(() => {
@@ -165,9 +212,11 @@ PanelWindow {
 
         interval: 120
         onTriggered: {
+            root.showWorkspace(root.pendingWs);
             if (root.pendingFocus)
                 Hyprland.dispatch(`hl.dsp.focus({ window = "address:0x${root.pendingFocus}" })`);
             root.pendingFocus = "";
+            root.pendingWs = null;
         }
     }
 
@@ -210,6 +259,12 @@ PanelWindow {
             } else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter) {
                 if (n)
                     root.focusWindow(root.shownWindows[root.selected]);
+                else if (root.tabWs !== root.wsName)
+                    root.gotoWorkspace(root.tabs.find(w => w.name === root.tabWs));
+            } else if (e.key === Qt.Key_PageDown || ((e.modifiers & Qt.ControlModifier) && (e.key === Qt.Key_Tab || e.key === Qt.Key_Right))) {
+                root.switchTab(1);
+            } else if (e.key === Qt.Key_PageUp || e.key === Qt.Key_Backtab && (e.modifiers & Qt.ControlModifier) || ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_Left)) {
+                root.switchTab(-1);
             } else if (e.key === Qt.Key_Right || e.key === Qt.Key_Tab) {
                 if (n)
                     root.selected = (root.selected + 1) % n;
@@ -231,12 +286,101 @@ PanelWindow {
             e.accepted = true;
         }
 
+        // Workspace tabs: click to preview, double-click (or Enter on an empty tab) to go there, wheel to cycle.
+        Row {
+            id: tabBar
+
+            visible: root.tabsVisible
+            x: (root.sw - width) / 2
+            y: root.margin / 2
+            spacing: 8
+
+            WheelHandler {
+                onWheel: e => root.switchTab(e.angleDelta.y > 0 ? -1 : 1)
+            }
+
+            Repeater {
+                model: root.tabsVisible ? root.tabs : []
+
+                Rectangle {
+                    id: tab
+
+                    required property var modelData
+                    readonly property bool current: modelData.name === root.tabWs
+                    readonly property var apps: Hyprland.toplevels.values.filter(t => t.workspace?.name === modelData.name)
+                    readonly property string label: modelData.name.replace(/^special:/, "") + ((root.cfg.allMonitors ?? false) && modelData.monitor?.name !== root.modelData.name ? " · " + (modelData.monitor?.name ?? "") : "")
+
+                    implicitWidth: tabRow.implicitWidth + 28
+                    implicitHeight: 40
+                    radius: height / 2
+                    color: current ? Theme.m3primary : tabMouse.containsMouse ? Theme.m3surfaceContainerHigh : Theme.m3surfaceContainer
+
+                    Row {
+                        id: tabRow
+
+                        anchors.centerIn: parent
+                        spacing: 8
+
+                        // Marks the workspace that's actually on screen.
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: tab.modelData.name === root.wsName
+                            width: 6
+                            height: 6
+                            radius: 3
+                            color: tab.current ? Theme.m3onPrimary : Theme.m3primary
+                        }
+
+                        StyledText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: tab.label
+                            color: tab.current ? Theme.m3onPrimary : Theme.m3onSurface
+                            font.weight: 600
+                        }
+
+                        Repeater {
+                            model: tab.apps.slice(0, Math.max(0, root.cfg.tabIcons ?? 4))
+
+                            IconImage {
+                                required property var modelData
+
+                                anchors.verticalCenter: parent.verticalCenter
+                                implicitSize: 18
+                                source: root.iconFor(modelData)
+                            }
+                        }
+
+                        StyledText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: tab.apps.length > Math.max(0, root.cfg.tabIcons ?? 4)
+                            text: "+" + (tab.apps.length - Math.max(0, root.cfg.tabIcons ?? 4))
+                            color: tab.current ? Theme.m3onPrimary : Theme.m3onSurfaceVariant
+                            font.pixelSize: Theme.fontSmall
+                        }
+                    }
+
+                    MouseArea {
+                        id: tabMouse
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.tabPick = tab.modelData.name;
+                            root.selected = 0;
+                        }
+                        onDoubleClicked: root.gotoWorkspace(tab.modelData)
+                    }
+                }
+            }
+        }
+
         StyledText {
             x: 0
-            y: root.margin / 2
+            y: root.tabsVisible ? root.margin / 2 + 52 : root.margin / 2
             width: root.sw
             horizontalAlignment: Text.AlignHCenter
-            text: root.filter ? "Filter: " + root.filter : (root.cfg.showHint ?? true) ? "Type to filter · arrows / Tab to move · Enter to focus · middle-click to close a window · Esc to exit" : ""
+            text: root.filter ? "Filter: " + root.filter : (root.cfg.showHint ?? true) ? "Type to filter · arrows / Tab to move · Enter to focus · middle-click to close" + (root.tabsVisible ? " · Ctrl+Tab / PgUp / PgDn or wheel on tabs to switch workspace" : "") + " · Esc to exit" : ""
             color: root.filter ? Theme.m3primary : Theme.m3onSurfaceVariant
             font.pixelSize: root.filter ? Theme.fontLarge : Theme.fontSmall
             font.weight: root.filter ? 600 : 400
@@ -245,7 +389,7 @@ PanelWindow {
         StyledText {
             anchors.centerIn: parent
             visible: root.shownWindows.length === 0
-            text: root.filter ? "No windows match" : "No windows on this workspace"
+            text: root.filter ? "No windows match" : root.tabWs !== root.wsName ? "No windows on this workspace · Enter to go there" : "No windows on this workspace"
             color: Theme.m3onSurfaceVariant
             font.pixelSize: Theme.fontLarge
         }

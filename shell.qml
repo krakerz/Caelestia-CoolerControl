@@ -19,4 +19,10 @@ ShellRoot {
 
         Overview {}
     }
+
+    Variants {
+        model: Config.loaded && (Config.data.timer?.enabled ?? true) ? Config.screensFor(Config.data.timer?.monitor) : []
+
+        TimerWidget {}
+    }
 }

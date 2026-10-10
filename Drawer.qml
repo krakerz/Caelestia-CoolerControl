@@ -17,6 +17,9 @@ PanelWindow {
     property bool holdOpen: false // e.g. while editing
     property real triggerSpan: along // length of the closed hover strip, from the panel's start
     property bool keyboard: false
+    property real flash: 0 // 0..1 attention tint, see flashColour / flashStrength
+    property color flashColour: Theme.m3primary
+    property real flashStrength: 0.45
 
     // position: "<edge>" (centred on that edge) or "<edge>-<end>": top-left/top-right/bottom-left/bottom-right,
     // left-top/left-bottom/right-top/right-bottom. With an end, the panel is anchored there and x/y nudge from it.
@@ -26,16 +29,22 @@ PanelWindow {
     readonly property bool vertical: edge === "left" || edge === "right" // panel grows sideways
     readonly property string align: end === "left" || end === "top" ? "start" : end === "right" || end === "bottom" ? "end" : "center"
 
-    // Caelestia frame: bar on the left, thin border elsewhere.
+    // Caelestia frame: by default read from the space Caelestia reserves on each edge (bar width on the left
+    // when the bar is persistent, the border when it auto-hides). Numbers in theme.frame override it.
     readonly property var frame: Config.theme.frame ?? ({})
-    readonly property int thick: frame.thickness ?? 10
+    readonly property var reserved: Hyprland.monitorFor(modelData)?.lastIpcObject?.reserved ?? [60, 10, 10, 10]
+    function frameSide(key, i) {
+        const v = frame[key];
+        return typeof v === "number" ? v : reserved[i];
+    }
+    readonly property int thick: frameSide("thickness", 1)
     // Over a fullscreen app Caelestia hides its frame, so the panel floats as a plain card instead.
     readonly property bool floating: fullscreen
     readonly property int gap: cfg.fullscreenMargin ?? 10
-    readonly property int inL: floating ? gap : frame.barWidth ?? 60
-    readonly property int inT: floating ? gap : thick
-    readonly property int inR: floating ? gap : thick
-    readonly property int inB: floating ? gap : thick
+    readonly property int inL: floating ? gap : frameSide("barWidth", 0)
+    readonly property int inT: floating ? gap : frameSide("thickness", 1)
+    readonly property int inR: floating ? gap : frameSide("thickness", 2)
+    readonly property int inB: floating ? gap : frameSide("thickness", 3)
     readonly property real edgeInset: ({
             top: inT,
             bottom: inB,
@@ -202,7 +211,7 @@ PanelWindow {
             preferredRendererType: Shape.CurveRenderer
 
             ShapePath {
-                fillColor: Theme.m3surface
+                fillColor: root.flash > 0 ? Qt.tint(Theme.m3surface, Theme.alpha(root.flashColour, root.flash * root.flashStrength)) : Theme.m3surface
                 strokeWidth: root.floating ? 1 : -1
                 strokeColor: Theme.m3outlineVariant
 

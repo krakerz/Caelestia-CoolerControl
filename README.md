@@ -17,7 +17,8 @@ Caelestia-CoolerControl provides a suite of desktop widgets for the Hyprland win
 - Public holidays for multiple countries via Google Calendar or Nager API
 - Thunderbird calendar integration with per-calendar colour customization
 - CoolerControl system monitor: temperature, fan speed, power, frequency readings; show/hide, rename and reorder devices and readings in edit mode
-- Window overview (KDE "Present Windows" style): live thumbnails of the current workspace, click or Enter to focus, type to filter
+- Timer panel with presets, manual adjust, finish notification and flashing alert
+- Window overview (KDE "Present Windows" style): live thumbnails, workspace tabs (optionally special workspaces and other monitors), click or Enter to focus, type to filter
 - Live Caelestia colour scheme integration with per-colour config overrides
 - JSON configuration file with hot reload (no restart needed)
 - Per-widget monitor targeting, layer control, and styling
@@ -67,6 +68,13 @@ qs -c caelestia-coolercontrol ipc call calendar close     # Close calendar
 qs -c caelestia-coolercontrol ipc call coolercontrol toggle    # Toggle CoolerControl visibility
 qs -c caelestia-coolercontrol ipc call coolercontrol open      # Open CoolerControl
 qs -c caelestia-coolercontrol ipc call coolercontrol close     # Close CoolerControl
+
+qs -c caelestia-coolercontrol ipc call timer toggle       # Toggle timer visibility
+qs -c caelestia-coolercontrol ipc call timer open         # Open timer
+qs -c caelestia-coolercontrol ipc call timer close        # Close timer
+qs -c caelestia-coolercontrol ipc call timer start 5      # Start timer with 5 minutes (0 = current duration)
+qs -c caelestia-coolercontrol ipc call timer playPause    # Play or pause timer
+qs -c caelestia-coolercontrol ipc call timer reset        # Reset timer
 ```
 
 Example keybinds for `~/.config/caelestia/hypr-user.lua` (this is an example, not installed automatically):
@@ -75,19 +83,68 @@ Example keybinds for `~/.config/caelestia/hypr-user.lua` (this is an example, no
 hl.bind("SUPER + G", hl.dsp.exec_cmd("qs -c caelestia-coolercontrol ipc call calendar toggle"))
 hl.bind("SUPER + H", hl.dsp.exec_cmd("qs -c caelestia-coolercontrol ipc call coolercontrol toggle"))
 hl.bind("SUPER + W", hl.dsp.exec_cmd("qs -c caelestia-coolercontrol ipc call overview toggle"))
+hl.bind("SUPER + J", hl.dsp.exec_cmd("qs -c caelestia-coolercontrol ipc call timer toggle"))
 ```
+
+### Timer
+
+`qs -c caelestia-coolercontrol ipc call timer toggle` opens or closes the timer panel from the bottom frame. The timer switches layouts based on state:
+
+- **Idle**: Title + pin button, − time + buttons with play button, presets row.
+- **Running**: Countdown only + pause button; progress bar underneath.
+- **Paused**: Countdown + resume and cancel (×) buttons; progress bar underneath.
+- **Finished**: "Done" text + dismiss button; panel flashes (if enabled) then auto-hides after a configurable delay.
+
+Display & input:
+- Large time display shows remaining duration (sized via `timeScale`). Click the time when idle or paused to type a new duration in `m`, `m:ss` or `h:mm:ss` format; press Enter to set it or Esc to cancel.
+- Use the ±/+ buttons (visible in idle state) or scroll the mouse wheel (Shift+wheel for ±10 seconds, normal scroll for ±1 minute).
+- Up to 3 quick-start presets (configurable, default 3, 5, 15 minutes; values ≥60 that are whole hours show as "h").
+
+On finish: Optional desktop notification (`notify`, notify-send), optional command execution (`command`: shell string via `sh -c`, or argv array), panel flashes towards primary colour (if `flash` is true), shows "Done", then auto-hides after `hideAfter` seconds (default 10). Clicking the × dismisses it early. Panel stays open (doesn't auto-hide) from start until finished + hideAfter delay.
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| timer.enabled | `true` | Enable the timer widget |
+| timer.monitor | `"DP-1"` | Monitor for the widget |
+| timer.position | `"bottom-left"` | Drawer position: `"top"`, `"bottom"`, `"left"`, `"right"` (attached to edge middle) or `"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"` (corners) |
+| timer.x | `0` | Horizontal pixel nudge from preset position (positive = right); ignored for left/right edges |
+| timer.y | `0` | Vertical pixel nudge from preset position (positive = down); ignored for top/bottom edges |
+| timer.mode | `"hover"` | Activation mode: `"hover"` (appears on frame edge hover), `"always"` (always visible) |
+| timer.pinned | `false` | Persist the drawer open (user-toggleable via pin button) |
+| timer.closeDelay | `300` | Milliseconds to wait before auto-closing after mouse leaves (idle only; the panel stays open while running, paused or finished) |
+| timer.triggerSize | `10` | Hover strip depth from screen edge in pixels (default = frame thickness) |
+| timer.layer | `"overlay"` | Wayland layer: `"overlay"` (above Caelestia, survives its restarts) or `"top"` |
+| timer.hideOnFullscreen | `true` | Ignore hover and pinning while a fullscreen app is open; a keybind still opens the panel as a floating card |
+| timer.width | `240` | Drawer width in pixels |
+| timer.title | `"Timer"` | Widget title |
+| timer.defaultMinutes | `5` | Default timer duration in minutes |
+| timer.presets | `[3, 5, 15]` | Array of preset durations in minutes (up to 3; values ≥60 that are whole hours show as "h") |
+| timer.hideAfter | `10` | Seconds to show "Done" after finish before auto-hiding |
+| timer.flash | `true` | Flash the panel while showing "Done" (see the three flash settings below) |
+| timer.flashColour | `"primary"` | Flash colour: `"#rrggbb"` or a Caelestia scheme colour name (`"primary"`, `"error"`, `"tertiary"`, ...) so it follows the scheme |
+| timer.flashStrength | `0.45` | How strongly the panel tints while flashing, 0–1 |
+| timer.flashSpeed | `900` | Duration of one full flash pulse in milliseconds |
+| timer.notify | `true` | Send a desktop notification on finish (uses notify-send) |
+| timer.command | `""` | Shell command to run on finish; string passed to `sh -c`, or array for argv-style (e.g. `"paplay /path/to/sound.oga"` or `["paplay", "/path/to/sound.oga"]`) |
+| timer.timeScale | `2.2` | Time text size as a multiple of the base font size |
 
 ### Window overview
 
-`qs -c caelestia-coolercontrol ipc call overview toggle` shows every window on the focused monitor's current workspace (or its open special workspace) as a live thumbnail, KDE "Present Windows" style.
+`qs -c caelestia-coolercontrol ipc call overview toggle` shows the windows on the focused monitor's current workspace (or its open special workspace) as live thumbnails, KDE "Present Windows" style. A tab bar at the top previews the other workspaces; windows on hidden workspaces get live thumbnails too.
 
-- Click or Enter focuses a window and closes the overview; middle-click closes a window.
+- Click or Enter focuses a window and closes the overview, switching to its workspace first if needed; middle-click closes a window.
 - Arrow keys / Tab move the selection, typing filters by title or app, Backspace edits the filter.
+- Tabs: click one to preview it, double-click (or Enter on an empty one) to go there; Ctrl+Tab / Ctrl+Shift+Tab, PgDn / PgUp, Ctrl+←/→ or the mouse wheel over the tab bar cycle them. The dot marks the workspace that's on screen.
 - Esc clears the filter, then closes; clicking the backdrop closes too.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
 | overview.enabled | `true` | Enable the overview |
+| overview.showTabs | `true` | Show the workspace tab bar (hidden anyway when there's only one tab) |
+| overview.allMonitors | `false` | Also list workspaces on other monitors (their tabs show the monitor name) |
+| overview.showSpecial | `false` | Also list special workspaces (an open special workspace is always listed) |
+| overview.showEmpty | `false` | Also list workspaces without windows (e.g. persistent ones) |
+| overview.tabIcons | `4` | App icons per tab; extra windows show as "+N" (`0` = none) |
 | overview.live | `true` | Live thumbnails (false = a still frame per window) |
 | overview.dim | `0.7` | Backdrop opacity |
 | overview.margin | `80` | Screen margin around the thumbnails |
@@ -144,8 +201,8 @@ Example: calendar centred on the top edge, nudged 200 pixels right:
 | | cardPadding | `14` | Internal padding of cards |
 | | spacing | `12` | Spacing between items in drawers |
 | | animDuration | `400` | Animation duration in milliseconds for drawer open/close |
-| | frame.barWidth | `60` | Width of Caelestia's bar (must match Caelestia config) |
-| | frame.thickness | `10` | Thickness of Caelestia's screen edge (must match Caelestia config) |
+| | frame.barWidth | `"auto"` | Width of Caelestia's bar (read from the reserved screen edge when `"auto"`, or a number to override) |
+| | frame.thickness | `"auto"` | Thickness of Caelestia's screen edge (read from the reserved screen edge when `"auto"`, or a number to override) |
 | **calendar** | enabled | `true` | Enable the calendar widget |
 | | monitor | `"DP-1"` | Monitor name, `"all"`, `"primary"`, or list of names |
 | | position | `"top-left"` | Drawer position: `"top"`, `"bottom"`, `"left"`, `"right"` (attached to edge middle) or `"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"` (corners) |

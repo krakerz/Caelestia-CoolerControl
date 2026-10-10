@@ -7,8 +7,8 @@
     "fontSize": 13,
     "padding": 16,
     "frame": {
-      "barWidth": 60,
-      "thickness": 10
+      "barWidth": "auto",
+      "thickness": "auto"
     },
     "panelRounding": 25,
     "cardRounding": 17,
@@ -109,6 +109,40 @@
     "margin": 80,
     "gap": 28,
     "maxThumbHeight": 0.55,
-    "showHint": true
+    "showHint": true,
+    "showTabs": true,
+    "allMonitors": false,
+    "showSpecial": false,
+    "showEmpty": false,
+    "tabIcons": 4
+  },
+  "timer": {
+    "enabled": true,
+    "monitor": "DP-1",
+    "position": "bottom-left",
+    "x": 0,
+    "y": 0,
+    "mode": "hover",
+    "pinned": false,
+    "closeDelay": 300,
+    "triggerSize": 10,
+    "layer": "overlay",
+    "hideOnFullscreen": true,
+    "width": 240,
+    "title": "Timer",
+    "defaultMinutes": 5,
+    "presets": [
+      3,
+      5,
+      15
+    ],
+    "hideAfter": 10,
+    "flash": true,
+    "notify": true,
+    "command": "",
+    "timeScale": 2.2,
+    "flashColour": "primary",
+    "flashStrength": 0.45,
+    "flashSpeed": 900
   }
 }
