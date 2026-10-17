@@ -14,10 +14,18 @@ Singleton {
     property var errors: []
     readonly property bool loading: proc.running
     property string lastCfg: ""
+    property bool pending: false
 
-    function refresh() {
-        if (active && !proc.running)
+    Component.onCompleted: lastCfg = JSON.stringify(Config.calendar)
+
+    // queue: a config change during a run fetches again afterwards instead of being dropped.
+    function refresh(queue) {
+        if (!active)
+            return;
+        if (!proc.running)
             proc.running = true;
+        else if (queue)
+            pending = true;
     }
 
     function apply(text) {
@@ -48,6 +56,10 @@ Singleton {
         onExited: code => {
             if (code !== 0)
                 root.errors = ["events.py failed: " + (stderr.text.trim().split("\n").pop() || "exit " + code)];
+            if (root.pending) {
+                root.pending = false;
+                Qt.callLater(root.refresh);
+            }
         }
     }
 
@@ -76,6 +88,6 @@ Singleton {
         id: debounce
 
         interval: 500
-        onTriggered: root.refresh()
+        onTriggered: root.refresh(true)
     }
 }

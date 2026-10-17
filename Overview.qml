@@ -135,7 +135,9 @@ PanelWindow {
         }
         if (wsName.startsWith("special:"))
             Hyprland.dispatch(`hl.dsp.workspace.toggle_special("${(monitor?.lastIpcObject?.specialWorkspace?.name ?? "").replace(/^special:/, "")}")`);
-        Hyprland.dispatch(`hl.dsp.focus({ workspace = "${w.id}" })`);
+        // Re-focusing the active workspace would bounce to the previous one with workspace_back_and_forth.
+        if (w.name !== monitor?.activeWorkspace?.name)
+            Hyprland.dispatch(`hl.dsp.focus({ workspace = "${w.id}" })`);
     }
 
     function switchTab(dir) {
@@ -296,7 +298,10 @@ PanelWindow {
             spacing: 8
 
             WheelHandler {
-                onWheel: e => root.switchTab(e.angleDelta.y > 0 ? -1 : 1)
+                onWheel: e => {
+                    if (e.angleDelta.y)
+                        root.switchTab(e.angleDelta.y > 0 ? -1 : 1);
+                }
             }
 
             Repeater {

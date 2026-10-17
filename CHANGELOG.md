@@ -16,6 +16,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Reorder CoolerControl devices and readings with arrows in edit mode
 - Window overview (KDE Present Windows style) with live thumbnails of the current workspace, keyboard navigation and type-to-filter
 
+### Fixed
+
+- Recurring events from another time zone keep the right local time across that zone's daylight-saving changes
+- Outlook events with time zones like "(UTC+08:00) Kuala Lumpur, Singapore" are no longer dropped
+- Panel buttons no longer overwrite config.json while it has a syntax error
+- Identical CoolerControl devices (e.g. two of the same SSD) get separate cards
+- Calendar follows the date into a new month while showing the current one
+- Horizontal scrolling no longer flips the calendar month
+- Calendar settings changed during a refresh are no longer missed
+- A single Thunderbird calendar name in `calendars` matches only that calendar
+- Example config shows the panels on all monitors instead of only DP-1
+
 ## [0.1.0] — 2026-10-07
 
 ### Added

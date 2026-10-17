@@ -87,6 +87,25 @@ def fetch(url, ttl, label):
 
 # --- ICS ---------------------------------------------------------------------
 
+def split_prop(line):
+    """Split a content line into (NAME, {PARAM: value}, value), or None. Quoted parameter values may contain
+    ':' and ';', e.g. Outlook's TZID="(UTC+08:00) Kuala Lumpur, Singapore"."""
+    quoted = False
+    for i, ch in enumerate(line):
+        if ch == '"':
+            quoted = not quoted
+        elif ch == ":" and not quoted:
+            break
+    else:
+        return None
+    name, *params = re.findall(r'(?:[^;"]|"[^"]*")+', line[:i]) or [""]
+    pd = {}
+    for p in params:
+        k, _, v = p.partition("=")
+        pd[k.upper()] = v.strip('"')
+    return name.upper(), pd, line[i + 1:]
+
+
 def parse_props(text):
     """Return VEVENTs as {NAME: [(params, value), ...]}, ignoring nested components like VALARM."""
     text = re.sub(r"\r?\n[ \t]", "", text)
@@ -107,15 +126,9 @@ def parse_props(text):
                 else:
                     depth -= 1
             continue
-        if cur is None or depth or ":" not in line:
-            continue
-        head, _, value = line.partition(":")
-        name, *params = head.split(";")
-        pd = {}
-        for p in params:
-            k, _, v = p.partition("=")
-            pd[k.upper()] = v.strip('"')
-        cur.setdefault(name.upper(), []).append((pd, value))
+        prop = split_prop(line) if cur is not None and not depth else None
+        if prop:
+            cur.setdefault(prop[0], []).append(prop[1:])
     return events
 
 
@@ -127,21 +140,28 @@ def unescape(s):
     return s.replace("\\n", " ").replace("\\N", " ").replace("\\,", ",").replace("\\;", ";").replace("\\\\", "\\").strip()
 
 
+def zone(tzid):
+    """IANA or Windows zone; for unknown names like "(UTC+08:00) Kuala Lumpur" the fixed offset, else local."""
+    try:
+        return ZoneInfo(WINDOWS_TZ.get(tzid, tzid))
+    except Exception:
+        m = re.search(r"(?:UTC|GMT)\s*([+-])(\d{1,2}):?(\d{2})?", tzid)
+        if not m:
+            return LOCAL
+        off = dt.timedelta(hours=int(m.group(2)), minutes=int(m.group(3) or 0))
+        return dt.timezone(-off if m.group(1) == "-" else off)
+
+
+# Times stay in their own zone so recurrences keep their wall-clock time across that zone's DST changes;
+# emit() converts to local.
 def parse_time(value, params):
     value = value.strip()
     if params.get("VALUE") == "DATE" or re.fullmatch(r"\d{8}", value):
         return dt.datetime.strptime(value[:8], "%Y%m%d").date()
     stamp = dt.datetime.strptime(value[:15], "%Y%m%dT%H%M%S")
     if value.endswith("Z"):
-        return stamp.replace(tzinfo=dt.timezone.utc).astimezone(LOCAL)
-    tz = LOCAL
-    if "TZID" in params:
-        tzid = params["TZID"]
-        try:
-            tz = ZoneInfo(WINDOWS_TZ.get(tzid, tzid))
-        except Exception:
-            pass  # unknown zone name; assume local
-    return stamp.replace(tzinfo=tz).astimezone(LOCAL)
+        return stamp.replace(tzinfo=dt.timezone.utc)
+    return stamp.replace(tzinfo=zone(params["TZID"]) if "TZID" in params else LOCAL)
 
 
 def parse_duration(v):
@@ -265,8 +285,8 @@ def emit(out, title, start, end, all_day, source, color, holiday, win_start, win
             if win_start <= d <= win_end:
                 out.append({**base, "date": d.isoformat(), "start": "", "end": ""})
         return
-    if end is None or end < start:
-        end = start
+    start = start.astimezone(LOCAL)
+    end = start if end is None or end < start else end.astimezone(LOCAL)
     sd, ed = start.date(), end.date()
     if ed > sd and end == dt.datetime.combine(ed, dt.time(), LOCAL):
         ed -= dt.timedelta(1)  # ends exactly at midnight: don't show on the next day
@@ -306,7 +326,7 @@ def ics_occurrences(text, win_start, win_end, skip=None):
             if all_day and is_dt(end):
                 end = end.date()
             elif not all_day and end is not None and not is_dt(end):
-                end = dt.datetime.combine(end, dt.time(), LOCAL)
+                end = dt.datetime.combine(end, dt.time(), start.tzinfo)
             length = end - start if end is not None else None
             rule = "" if "RECURRENCE-ID" in ev else first(ev, "RRULE")
             ex = set()
@@ -415,7 +435,7 @@ def tb_time(us, tz, all_day):
     if all_day or tz == "floating":
         naive = dt.datetime(1970, 1, 1) + dt.timedelta(microseconds=us)
         return naive.date() if all_day else naive.replace(tzinfo=LOCAL)
-    return dt.datetime.fromtimestamp(us / 1e6, dt.timezone.utc).astimezone(LOCAL)
+    return dt.datetime.fromtimestamp(us / 1e6, dt.timezone.utc).astimezone(zone(tz) if tz else LOCAL)
 
 
 def tb_query(path):
@@ -452,6 +472,8 @@ def thunderbird(cfg, win_start, win_end, out):
         errors.append("Thunderbird: no profile with calendars found")
         return
     wanted = tb.get("calendars", "all")
+    if isinstance(wanted, str) and wanted != "all":
+        wanted = [wanted]  # a single name, not a substring match
     colors = tb.get("colors", {})
     cals = {cid: c for cid, c in calendar_registry(profile).items()
             if not c.get("disabled") and (wanted == "all" or c.get("name") in wanted)}
@@ -468,9 +490,7 @@ def thunderbird(cfg, win_start, win_end, out):
         for cal_id, item_id, ical in recs:
             entry = rules.setdefault((cal_id, item_id), {"rule": "", "ex": set()})
             for line in (ical or "").splitlines():
-                head, _, value = line.partition(":")
-                name, *params = head.split(";")
-                pd = dict(p.split("=", 1) for p in params if "=" in p)
+                name, pd, value = split_prop(line) or ("", {}, "")
                 if name == "RRULE":
                     entry["rule"] = value
                 elif name == "EXDATE":

@@ -75,7 +75,10 @@ Singleton {
         write(d);
     }
 
+    // While the file doesn't parse, data is the last good copy; writing it would wipe the user's unsaved edits.
     function write(d) {
+        if (error)
+            return;
         data = d;
         file.setText(JSON.stringify(d, null, 2) + "\n");
     }

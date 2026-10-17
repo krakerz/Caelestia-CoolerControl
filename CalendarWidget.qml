@@ -12,6 +12,7 @@ Drawer {
     readonly property string todayKey: key(today)
     property int viewYear: new Date().getFullYear()
     property int viewMonth: new Date().getMonth()
+    property bool followToday: true // view is on the current month, so it moves on with the date
     property string selected: ""
     readonly property real cellW: (panelW - Theme.padding * 2 - Theme.cardPadding * 2) / 7
     readonly property real cellH: cfg.cellHeight ?? Math.round(cellW * 0.8)
@@ -65,12 +66,19 @@ Drawer {
         viewYear += Math.floor(m / 12);
         viewMonth = (m % 12 + 12) % 12;
         selected = "";
+        followToday = viewYear === today.getFullYear() && viewMonth === today.getMonth();
     }
 
     function resetView() {
         viewYear = today.getFullYear();
         viewMonth = today.getMonth();
         selected = "";
+        followToday = true;
+    }
+
+    onTodayKeyChanged: if (followToday) {
+        viewYear = today.getFullYear();
+        viewMonth = today.getMonth();
     }
 
     function evColour(e) {
@@ -169,7 +177,10 @@ Drawer {
             columns: 7
 
             WheelHandler {
-                onWheel: e => win.shift(e.angleDelta.y > 0 ? -1 : 1)
+                onWheel: e => {
+                    if (e.angleDelta.y)
+                        win.shift(e.angleDelta.y > 0 ? -1 : 1);
+                }
             }
 
             Repeater {

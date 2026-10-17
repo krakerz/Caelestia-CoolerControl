@@ -18,7 +18,7 @@
   },
   "calendar": {
     "enabled": true,
-    "monitor": "DP-1",
+    "monitor": "all",
     "position": "top-left",
     "x": 0,
     "y": 0,
@@ -71,7 +71,7 @@
   },
   "coolercontrol": {
     "enabled": true,
-    "monitor": "DP-1",
+    "monitor": "all",
     "position": "top-right",
     "x": 0,
     "y": 0,
@@ -118,7 +118,7 @@
   },
   "timer": {
     "enabled": true,
-    "monitor": "DP-1",
+    "monitor": "all",
     "position": "bottom-left",
     "x": 0,
     "y": 0,

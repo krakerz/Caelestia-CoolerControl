@@ -13,7 +13,8 @@ Singleton {
     property real remaining: duration
     property string state: "idle" // idle | running | paused | finished
     property real endAt: 0
-    readonly property real progress: duration > 0 ? remaining / duration : 0
+    property real total: duration // length of the current run, including adjustments made while it runs
+    readonly property real progress: total > 0 ? remaining / total : 0
 
     function format(s) {
         s = Math.ceil(s);
@@ -38,15 +39,20 @@ Singleton {
     function setDuration(s) {
         duration = Math.max(1, Math.min(Math.round(s), 99 * 3600));
         remaining = duration;
+        total = duration;
         state = "idle";
     }
 
     function adjust(ds) {
         if (state === "running") {
+            const was = endAt;
             endAt = Math.max(Date.now() + 1000, endAt + ds * 1000);
+            total += (endAt - was) / 1000;
             tick();
         } else if (state === "paused") {
+            const was = remaining;
             remaining = Math.max(1, remaining + ds);
+            total += remaining - was;
         } else {
             setDuration(duration + ds);
         }
@@ -56,7 +62,7 @@ Singleton {
         if (state === "running")
             return;
         if (state !== "paused")
-            remaining = duration;
+            remaining = total = duration;
         endAt = Date.now() + remaining * 1000;
         state = "running";
     }
@@ -74,7 +80,7 @@ Singleton {
 
     function reset() {
         state = "idle";
-        remaining = duration;
+        remaining = total = duration;
     }
 
     function tick() {
@@ -87,7 +93,7 @@ Singleton {
         state = "finished";
         remaining = 0;
         if (cfg.notify ?? true)
-            Quickshell.execDetached(["notify-send", "-a", cfg.title ?? "Timer", "-i", "alarm-symbolic", cfg.title ?? "Timer", `${format(duration)} is up`]);
+            Quickshell.execDetached(["notify-send", "-a", cfg.title ?? "Timer", "-i", "alarm-symbolic", cfg.title ?? "Timer", `${format(total)} is up`]);
         const cmd = cfg.command ?? "";
         if (Array.isArray(cmd) ? cmd.length : cmd)
             Quickshell.execDetached(Array.isArray(cmd) ? cmd : ["sh", "-c", cmd]);

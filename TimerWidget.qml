@@ -14,7 +14,10 @@ Drawer {
 
     function commitTyped(text) {
         const s = TimerState.parse(text);
-        if (s > 0)
+        // Paused: the typed time replaces what's left, like the wheel does, instead of resetting the timer.
+        if (s > 0 && paused)
+            TimerState.adjust(s - TimerState.remaining);
+        else if (s > 0)
             TimerState.setDuration(s);
         typing = false;
     }
@@ -134,7 +137,11 @@ Drawer {
 
                 WheelHandler {
                     enabled: !win.finished
-                    onWheel: e => TimerState.adjust((e.angleDelta.y > 0 ? 1 : -1) * (e.modifiers & Qt.ShiftModifier ? 10 : 60))
+                    onWheel: e => {
+                        const d = e.angleDelta.y || e.angleDelta.x;
+                        if (d)
+                            TimerState.adjust((d > 0 ? 1 : -1) * (e.modifiers & Qt.ShiftModifier ? 10 : 60));
+                    }
                 }
             }
 

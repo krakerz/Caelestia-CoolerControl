@@ -105,7 +105,7 @@ On finish: Optional desktop notification (`notify`, notify-send), optional comma
 | Key | Default | Meaning |
 |-----|---------|---------|
 | timer.enabled | `true` | Enable the timer widget |
-| timer.monitor | `"DP-1"` | Monitor for the widget |
+| timer.monitor | `"all"` | Monitor name, `"all"`, `"primary"`, or list of names |
 | timer.position | `"bottom-left"` | Drawer position: `"top"`, `"bottom"`, `"left"`, `"right"` (attached to edge middle) or `"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"` (corners) |
 | timer.x | `0` | Horizontal pixel nudge from preset position (positive = right); ignored for left/right edges |
 | timer.y | `0` | Vertical pixel nudge from preset position (positive = down); ignored for top/bottom edges |
@@ -204,7 +204,7 @@ Example: calendar centred on the top edge, nudged 200 pixels right:
 | | frame.barWidth | `"auto"` | Width of Caelestia's bar (read from the reserved screen edge when `"auto"`, or a number to override) |
 | | frame.thickness | `"auto"` | Thickness of Caelestia's screen edge (read from the reserved screen edge when `"auto"`, or a number to override) |
 | **calendar** | enabled | `true` | Enable the calendar widget |
-| | monitor | `"DP-1"` | Monitor name, `"all"`, `"primary"`, or list of names |
+| | monitor | `"all"` | Monitor name, `"all"`, `"primary"`, or list of names |
 | | position | `"top-left"` | Drawer position: `"top"`, `"bottom"`, `"left"`, `"right"` (attached to edge middle) or `"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"` (corners) |
 | | x | `0` | Horizontal pixel nudge from preset position (positive = right); ignored for left/right edges |
 | | y | `0` | Vertical pixel nudge from preset position (positive = down); ignored for top/bottom edges |
@@ -221,6 +221,8 @@ Example: calendar centred on the top edge, nudged 200 pixels right:
 | | firstDayOfWeek | `1` | First weekday: 0 = Sunday, 1 = Monday |
 | | weekendDays | `[0, 6]` | Weekend days (0 = Sunday, 6 = Saturday) |
 | | timeFormat | `"24h"` | Time display: `"24h"` or `"12h"` |
+| | dateFormat | `"ddd d MMM"` | Date format of the day headers in the upcoming list ([Qt date format](https://doc.qt.io/qt-6/qdate.html#toString)) |
+| | cellHeight | 80% of cell width | Height of a day cell in the month grid, in pixels |
 | | showEventList | `true` | Show upcoming events list below calendar |
 | | showEventDetails | `true` | Show time and source for each event |
 | | showErrors | `true` | Display fetch/parse errors in the widget |
@@ -234,14 +236,15 @@ Example: calendar centred on the top edge, nudged 200 pixels right:
 | | holidays.countries | `["ID"]` | ISO country codes (e.g. `["US", "GB", "DE"]`); custom codes used verbatim as Google Calendar slugs |
 | | holidays.language | `"en"` | Language for holiday names (e.g. `"en"`, `"de"`, `"fr"`) |
 | | holidays.includeObservances | `false` | Include observance days (e.g. observed holidays not on the official date) |
+| | holidays.localNames | `false` | `"nager"` provider only: show holiday names in the country's own language |
 | | holidays.color | `""` | Colour for holiday events (optional hex) |
 | | holidays.refreshHours | `168` | Cache TTL for holiday data |
 | | thunderbird.enabled | `true` | Import Thunderbird calendars |
 | | thunderbird.profile | `"auto"` | Profile path or `"auto"` to auto-detect |
-| | thunderbird.calendars | `"all"` | Calendar names to include or `"all"` |
+| | thunderbird.calendars | `"all"` | Calendar names to include (a list, or one name) or `"all"` |
 | | thunderbird.colors | `{}` | Per-calendar colour overrides as `{name: "#RRGGBB"}` |
 | **coolercontrol** | enabled | `true` | Enable the CoolerControl widget |
-| | monitor | `"DP-1"` | Monitor for the widget |
+| | monitor | `"all"` | Monitor name, `"all"`, `"primary"`, or list of names |
 | | position | `"top-right"` | Drawer position: `"top"`, `"bottom"`, `"left"`, `"right"` (attached to edge middle) or `"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"` (corners) |
 | | x | `0` | Horizontal pixel nudge from preset position (positive = right); ignored for left/right edges |
 | | y | `0` | Vertical pixel nudge from preset position (positive = down); ignored for top/bottom edges |

@@ -71,28 +71,32 @@ Singleton {
                 value,
                 duty
             });
+        const seen = {};
         for (const dev of d.devices ?? []) {
             const i = info[dev.uid] ?? {
                 name: dev.type + " " + dev.type_index,
                 temps: {},
                 channels: {}
             };
+            // Identical devices (e.g. two of the same SSD) get " 2", " 3"… so their keys don't collide.
+            const n = seen[i.name] = (seen[i.name] ?? 0) + 1;
+            const name = n > 1 ? i.name + " " + n : i.name;
             const h = dev.status_history ?? [];
             const s = h[h.length - 1];
             if (!s)
                 continue;
             for (const t of s.temps ?? [])
-                add(i.name, i.temps[t.name] ?? t.name, "temp", t.temp);
+                add(name, i.temps[t.name] ?? t.name, "temp", t.temp);
             for (const ch of s.channels ?? []) {
                 const label = i.channels[ch.name] ?? ch.name;
                 if (ch.rpm != null)
-                    add(i.name, label, "fan", ch.rpm, ch.duty);
+                    add(name, label, "fan", ch.rpm, ch.duty);
                 else if (ch.watts != null)
-                    add(i.name, label, "power", ch.watts);
+                    add(name, label, "power", ch.watts);
                 else if (ch.freq != null)
-                    add(i.name, label, "freq", ch.freq);
+                    add(name, label, "freq", ch.freq);
                 else if (ch.duty != null)
-                    add(i.name, label, "duty", ch.duty);
+                    add(name, label, "duty", ch.duty);
             }
         }
         return out;

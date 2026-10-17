@@ -33,7 +33,7 @@ Singleton {
     readonly property color m3outlineVariant: c("outlineVariant", "#514347")
     readonly property color holiday: c("holiday", m3error)
 
-        readonly property string font: cfg.font ?? "Rubik"
+    readonly property string font: cfg.font ?? "Rubik"
     readonly property string monoFont: cfg.monoFont ?? "JetBrains Mono NF"
     readonly property int fontSize: cfg.fontSize ?? 13
     readonly property int fontSmall: fontSize - 2
